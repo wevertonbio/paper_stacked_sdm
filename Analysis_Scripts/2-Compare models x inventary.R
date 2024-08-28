@@ -32,7 +32,7 @@ source("Analysis_Scripts/helpers.R")
 variables <- rast("Rasters/Variables.tiff")
 
 #Invent?rio
-inv <- read.csv("Results/Inventario_SC/PAM_SC_15ago22.csv")
+inv <- read.csv("Results/Inventario_SC/PAM_SC_04jul24.csv")
 
 #Import info on forest patch area
 invdata <- fread("Results/Inventario_SC/Tamanho Unidades Amostrais IFFSC.csv",
@@ -61,7 +61,7 @@ res_2.5 <- lapply(names(pams), function(x) {
 
 ####Looping 5 arc-min ####
 fact5 <- round(0.0833333/res(r),0)
-r5 <- aggregate(r, fact = fact5)
+r5 <- terra::aggregate(r, fact = fact5)
 
 res_5 <- lapply(names(pams), function(x) {
   message(paste0("Running ", x))
@@ -74,7 +74,7 @@ res_5 <- lapply(names(pams), function(x) {
 
 ####Looping 10 arc-min ####
 fact10 <- round(0.166667/res(r), 0)
-r10 <- aggregate(r, fact = fact10)
+r10 <- terra::aggregate(r, fact = fact10)
 
 res_10 <- lapply(names(pams), function(x) {
   message(paste0("Running ", x))
@@ -87,7 +87,7 @@ res_10 <- lapply(names(pams), function(x) {
 
 ####Looping 30 arc-min ####
 fact30 <- round(0.5/res(r), 0)
-r30 <- aggregate(r, fact = fact30)
+r30 <- terra::aggregate(r, fact = fact30)
 
 res_30 <- lapply(names(pams), function(x) {
   message(paste0("Running ", x))
@@ -100,7 +100,7 @@ res_30 <- lapply(names(pams), function(x) {
 
 ####Looping 60 arc-min ####
 fact60 <- round(1/res(r), 0)
-r60 <- aggregate(r, fact = fact60)
+r60 <- terra::aggregate(r, fact = fact60)
 
 res_60 <- lapply(names(pams), function(x) {
   message(paste0("Running ", x))
@@ -116,7 +116,7 @@ all_res <- bind_rows(res_2.5, res_5, res_10, res_30, res_60)
 #Save
 fwrite(all_res, "Results/ModelsxInventary/Results.gz", row.names = FALSE,
        compress = "gzip")
-fwrite(all_res, "Results/ModelsxInventary/Results.csv", row.names = FALSE)
+
 
 #### Which model is better to predict richness and composition? ####
 library(dplyr)
@@ -151,6 +151,7 @@ s <- pblapply(1:nrow(mr), function(i){
                           mb)
   return(res_final)
 }) %>% bind_rows()
+row.names(s) <- NULL
 #Save results
 fwrite(s, file = "Results/ModelsxInventary/Summary_Results.gz",
        compress = "gzip", row.names = FALSE)

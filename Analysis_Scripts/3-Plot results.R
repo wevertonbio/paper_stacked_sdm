@@ -1,5 +1,5 @@
 #### Plot results ####
-#Data: 10 May 2024
+#Data: 05 July 2024
 #Carregar pacotes
 library(ggplot2)
 library(ggpubr)
@@ -17,6 +17,7 @@ library(ggnewscale)
 library(terra)
 library(tidyterra)
 library(ggrepel)
+library(patchwork)
 
 #Import helpers to plot
 source("Analysis_Scripts/plot_results_helpers.R")
@@ -27,37 +28,22 @@ dir.create("Results/Images", recursive = TRUE)
 #### Import summary of results ####
 s <- fread("Results/ModelsxInventary/Summary_Results.gz")
 
-#Create labels (letters)
-s_labels <- data.frame(Type = unique(s$Type)) %>%
-  mutate(l = letters[1:length(unique(Type))]) %>%
-  mutate(to_label = paste0(l, ". ", Type))
-
-#Join data
-s <- left_join(s, s_labels)
+# #Create labels (letters)
+# s_labels <- data.frame(Type = unique(s$Type)) %>%
+#   mutate(l = letters[1:length(unique(Type))]) %>%
+#   mutate(to_label = paste0(l, ". ", Type))
+#
+# #Join data
+# s <- left_join(s, s_labels)
 
 #Convert type of model and resolution to factor
-unique(s$to_label) %>% dput()
-s$to_label <- factor(x = s$to_label,
-                  levels = c("a. Ensemble_Only_Ranking",
-                             "b. Ensemble_Only_Threshold10",
-                             "c. Ensemble_Only_ThresholdMaxTSS",
-                             "d. Ensemble_Threshold10_and_Ranking",
-                             "e. Ensemble_ThresholdMaxTSS_and_Ranking",
-                             "f. Maxent_Only_Ranking",
-                             "g. Maxent_Only_Threshold10",
-                             "h. Maxent_Only_ThresholdMaxTSS",
-                             "i. Maxent_Threshold10_and_Ranking",
-                             "j. Maxent_ThresholdMaxTSS_and_Ranking"),
-                  labels = c("a. Ensemble - Only Ranking",
-                             "b. Ensemble - Only Threshold 10%",
-                             "c. Ensemble - Only Threshold MaxTSS",
-                             "d. Ensemble - Threshold 10% and Ranking",
-                             "e. Ensemble - Threshold MaxTSS and Ranking",
-                             "f. Maxent - Only Ranking",
-                             "g. Maxent - Only Threshold 10%",
-                             "h. Maxent - Only Threshold MaxTSS",
-                             "i. Maxent - Threshold 10% and Ranking",
-                             "j. Maxent - Threshold MaxTSS and\nRanking"))
+unique(s$Type) %>% dput()
+s$Type <- factor(x = s$Type,
+                  levels = c("sesam_only", "only_threshold_min",
+                             "only_threshold10", "thresholmin_and_sesam",
+                             "threshold10_and_sesam"),
+                  labels = c("SESAM", "Minimum threshold", "10% threshold",
+                             "Minimum thr. and SESAM", "10% thr. and SESAM"))
 #Resolution
 unique(s$Resolution)
 s$Resolution <- factor(x = s$Resolution,
@@ -67,11 +53,11 @@ s$Resolution <- factor(x = s$Resolution,
                                    "60arc-min"))
 
 ####H0 BETTER MODELS TO PREDICT RICHNESS AND COMPOSITION####
-my_col <- as.character(pals::brewer.set1(10))
-g0 <- ggplot(data = s, aes(x = 1 - BetaDiv_sor, y = Rich_cor, color = to_label)) +
-  geom_point() +
-  scale_color_manual(values = my_col, name = "Models") +
-  geom_label_repel(aes(label = l)) +
+my_col <- as.character(pals::brewer.set1(5))
+g0 <- ggplot(data = s, aes(x = 1 - BetaDiv_sor, y = Rich_cor, color = Type)) +
+  geom_point(size = 2.5) +
+  scale_color_manual(values = my_col, name = "Binarization") +
+  #geom_label_repel(aes(label = Type)) +
   guides(color = guide_legend(override.aes = aes(label = ""),
                               nrow = 3,
                               title.position = "top", title.hjust = 0.5)) +
@@ -79,37 +65,23 @@ g0 <- ggplot(data = s, aes(x = 1 - BetaDiv_sor, y = Rich_cor, color = to_label))
   ylab("Richness correlation\n(Observed x predicted)") +
   ggpubr::theme_pubclean() +
   theme(legend.position = "bottom") +
-  facet_wrap(.~ Resolution, scales = "free")
+  facet_wrap(.~ Resolution, scales = "free_x")
 g0
-ggsave(filename = "Results/Images/H0-Best_models.png", g0,
+ggsave(filename = "Results/Images/H0-Similarity x Richness.png", g0,
        dpi = 600, units = "px", width = 2700,
-       height = 1700, scale = 2.7)
+       height = 2000, scale = 2)
 
 #### Import commplete data ####
 df <- fread("Results/ModelsxInventary/Results.gz")
+write.csv(df, "Results/ModelsxInventary/Results.csv", row.names = FALSE)
 #Convert type of model and resolution to factor
 unique(df$Type) %>% dput()
 df$Type <- factor(x = df$Type,
-                  levels = c("Ensemble_Only_Ranking",
-                             "Ensemble_Only_Threshold10",
-                             "Ensemble_Only_ThresholdMaxTSS",
-                             "Ensemble_Threshold10_and_Ranking",
-                             "Ensemble_ThresholdMaxTSS_and_Ranking",
-                             "Maxent_Only_Ranking",
-                             "Maxent_Only_Threshold10",
-                             "Maxent_Only_ThresholdMaxTSS",
-                             "Maxent_Threshold10_and_Ranking",
-                             "Maxent_ThresholdMaxTSS_and_Ranking"),
-                  labels = c("Ensemble\nOnly Ranking",
-                             "Ensemble\nOnly Threshold 10%",
-                             "Ensemble\nOnly Threshold maxTSS",
-                             "Ensemble\nThreshold 10% and Ranking",
-                             "Ensemble\nThreshold maxTSS and Ranking",
-                             "Maxent\nOnly Ranking",
-                             "Maxent\nOnly Threshold 10%",
-                             "Maxent\nOnly Threshold maxTSS",
-                             "Maxent\nThreshold 10% and Ranking",
-                             "Maxent\nThreshold maxTSS and Ranking"))
+                  levels = c("sesam_only", "only_threshold_min",
+                             "only_threshold10", "thresholmin_and_sesam",
+                             "threshold10_and_sesam"),
+                  labels = c("SESAM", "Minimum threshold", "10% threshold",
+                             "Minimum thr. and SESAM", "10% thr. and SESAM"))
 #Resolution
 unique(df$Resolution)
 df$Resolution <- factor(x = df$Resolution,
@@ -206,7 +178,7 @@ g2f
 filename <- paste0("Results/Images/H2_boxplots/All_Models.png")
 ggsave(filename = filename, g2f,
        dpi = 600, units = "px", width = 2900,
-       height = 4000, scale = 2.5)
+       height = 4000, scale = 1.5)
 
 # #Plot density
 # g.h2 <- ggplot(df.b2, aes(log(Value + 1), fill = Metric)) +

@@ -17,93 +17,55 @@ source("Analysis_Scripts/helpers.R")
 #Create folder to save binarized communities
 dir.create("Results/PAM/")
 
-#Import metric results
-res <- fread("Results/Metrics.gz")
+#Import thresholds
+res <- fread("Results/Thresholds.csv")
 spp <- unique(res$species) #Get species
 
-####ONLY SESAM - MAXENT####
+#Import continuous PAM
+pam <- fread("Results/PAM_continuous.gz")
+
+#### ONLY SESAM ####
 #See more in: https://www.rdocumentation.org/packages/ecospat/versions/3.2.1/topics/ecospat.SESAM.prr
-pam_maxent <- fread("Results/Maxent_PAM.gz")
-
 ##Assemble community
-sesam_maxent <- only_sesam(pam = pam_maxent)
+sesam_only <- only_sesam(pam = pam)
 #Save
-fwrite(sesam_maxent, "Results/PAM/Maxent_Only_Ranking.gz", compress = "gzip",
+fwrite(sesam_only, "Results/PAM/sesam_only.gz", compress = "gzip",
        row.names = FALSE)
+
 # #Rasterize some species to see presence
-# sp <- "Araucaria angustifolia"
-# r.base <- raster("Models/Maxent/Araucaria angustifolia.tif")
-# sp.plot <- com.all %>% dplyr::select(x, y, sp) %>%
-#   st_as_sf(coords = c("x", "y"), crs = 4326) %>%
-#   rasterize(r.base)
-# crs(sp.plot) <- "+init=epsg:4326"
-# mapview(sp.plot[[2]])
+# sp <- "Araucaria_angustifolia"
+# r.base <- rast("kuenm_models/Abarema_langsdorffii/Current_Median.tiff")
+# sp.plot <- sesam_only %>% dplyr::select(x, y, sp) %>%
+#   vect(geom = c(x = "x", y = "y"), crs = "+init=epsg:4326")
+# sp.plot2 <- rasterize(sp.plot, r.base, sp)
+# mapview(sp.plot2)
 
-###ONLY SESAM - ENSEMBLE####
-pam_ensemble <- fread("Results/Ensemble_PAM.gz")
-##Assemble community
-sesam_ensemble <- only_sesam(pam = pam_ensemble)
-#Save
-fwrite(sesam_ensemble, "Results/PAM/Ensemble_Only_Ranking.gz", compress = "gzip",
+
+#### USING THRESHOLDS: 10% ####
+pam_10 <- apply_thr(species = spp, metric = res, thr = "thr10",
+                   pam = pam)
+#Binarize
+pam_10_bin <- bin(pam_10)
+#Save results
+fwrite(pam_10_bin, "Results/PAM/only_threshold10.gz", compress = "gzip",
        row.names = FALSE)
 
-####USING THRESHOLDS: 10% and Maximum Sensitivity plus Specificity (maxTSS)- MAXENT####
-#### Threshold of 10%
-maxent_10 <- apply_thr(species = spp, metric = res, thr = "sensitivity",
-                       pam = pam_maxent, m = "Maxent")
+#### USING minimum training presence ####
+pam_min <- apply_thr(species = spp, metric = res, thr = "thr_min",
+                     pam = pam)
 #Binarize
-maxent_10_bin <- bin(maxent_10)
+pam_min_bin <- bin(pam_min)
 #Save results
-fwrite(maxent_10_bin, "Results/PAM/Maxent_Only_Threshold10.gz", compress = "gzip",
-       row.names = FALSE)
-
-####Max TSS
-maxent_maxtss <- apply_thr(species = spp, metric = res, thr = "max_sens_spec",
-                       pam = pam_maxent, m = "Maxent")
-#Binarize
-maxent_maxtss_bin <- bin(maxent_maxtss)
-#Save results
-fwrite(maxent_maxtss_bin, "Results/PAM/Maxent_Only_ThresholdMaxTSS.gz", compress = "gzip",
+fwrite(pam_min_bin, "Results/PAM/only_threshold_min.gz", compress = "gzip",
        row.names = FALSE)
 
 ##Combining threshold and SESAM
 #10%
-maxent_10_sesam <- only_sesam(maxent_10)
-fwrite(maxent_10_sesam, "Results/PAM/Maxent_Threshold10_and_Ranking.gz", compress = "gzip",
+pam_10_sesam <- only_sesam(pam_10)
+fwrite(pam_10_sesam, "Results/PAM/threshold10_and_sesam.gz", compress = "gzip",
        row.names = FALSE)
-#Max TSS
-maxent_maxtss_sesam <- only_sesam(maxent_maxtss)
-fwrite(maxent_maxtss_sesam, "Results/PAM/Maxent_ThresholdMaxTSS_and_Ranking.gz", compress = "gzip",
+#Minimum occurrence
+pam_min_sesam <- only_sesam(pam_min)
+fwrite(pam_min_sesam, "Results/PAM/thresholmin_and_sesam.gz", compress = "gzip",
        row.names = FALSE)
-
-####USING THRESHOLDS: 10% and Maximum Sensitivity plus Specificity (maxTSS)- ENSEMBLE####
-#### Threshold of 10%
-ensemble_10 <- apply_thr(species = spp, metric = res, thr = "sensitivity",
-                       pam = pam_ensemble, m = "Ensemble")
-#Binarize
-ensemble_10_bin <- bin(ensemble_10)
-#Save results
-fwrite(ensemble_10_bin, "Results/PAM/Ensemble_Only_Threshold10.gz", compress = "gzip",
-       row.names = FALSE)
-
-####Max TSS
-ensemble_maxtss <- apply_thr(species = spp, metric = res, thr = "max_sens_spec",
-                           pam = pam_ensemble, m = "Ensemble")
-#Binarize
-ensemble_maxtss_bin <- bin(ensemble_maxtss)
-#Save results
-fwrite(ensemble_maxtss_bin, "Results/PAM/Ensemble_Only_ThresholdMaxTSS.gz", compress = "gzip",
-       row.names = FALSE)
-
-##Combining threshold and SESAM
-#10%
-ensemble_10_sesam <- only_sesam(ensemble_10)
-fwrite(ensemble_10_sesam, "Results/PAM/Ensemble_Threshold10_and_Ranking.gz", compress = "gzip",
-       row.names = FALSE)
-#Max TSS
-ensemble_maxtss_sesam <- only_sesam(ensemble_maxtss)
-fwrite(ensemble_maxtss_sesam, "Results/PAM/Ensemble_ThresholdMaxTSS_and_Ranking.gz", compress = "gzip",
-       row.names = FALSE)
-
-
 

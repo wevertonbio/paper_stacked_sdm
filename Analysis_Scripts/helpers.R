@@ -46,7 +46,7 @@ ecospat.SESAM.parallel <- function(proba, sr, cores = 6) {
 only_sesam <- function(pam){
   #Determine maximum species richness in each site (which is the sum of probabilities in each site)
   sr <- pam %>% dplyr::select(!c(x, y)) %>%
-    rowSums() %>%
+    rowSums(na.rm = TRUE) %>%
     as.data.frame()
   colnames(sr) <- "Richness"
 
@@ -78,11 +78,10 @@ only_sesam <- function(pam){
 }
 
 #Apply threshold
-apply_thr <- function(species, metric, thr, pam, m) {
+apply_thr <- function(species, metric, thr, pam) {
   for (i in species) {
     #Get threshold
-    thr_i <- metric %>% filter(species == i, threshold == thr, model == m) %>%
-      dplyr::select(thr_value) %>% pull()
+    thr_i <- metric[[thr]][metric$species == i]
     pam[[i]][which(pam[[i]] < thr_i)] <- 0
   }
   return(pam)

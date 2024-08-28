@@ -85,6 +85,7 @@ gg_cor <- function(data){
     geom_abline(intercept = 0, slope = 1, colour = "red",
                 linetype = "dashed", size = 1.2) +
     xlab("Observed richness") + ylab("Predicted richness") +
+    expand_limits(x = 0, y=0) +
     ggpubr::theme_pubclean() +
     theme(axis.text=element_text(size=14), #Change size of numbers in axis
           axis.title=element_text(size=20,face="bold")) #Change size of text in axis
