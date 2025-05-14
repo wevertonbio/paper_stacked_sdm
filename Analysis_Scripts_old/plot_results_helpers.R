@@ -1,5 +1,6 @@
-get_rasters <- function(data, to_rast){
-
+get_rasters <- function(data){
+  #Variables do rasterize
+  to_rast <- c("Rich_obs", "Rich_pred",  "Rich_ratio")
   #Split data by model
   df_m <- split(data, data$Type)
   #Get resolutions
@@ -43,35 +44,17 @@ get_rasters <- function(data, to_rast){
 } #End of function
 
 ####Plot maps####
-gg_map <- function(r, title_legend = "Richness", type = NULL, l = NULL,
-                   round = TRUE, breaks = NULL){
-  #Get resolution
-  r_res <- names(r)
-  #Get limits
-  if(!is.null(l)){
-  limits_r <- l[[r_res]]} else {
-    limits_r <- minmax(r)
-  }
-
-  #Get breaks
-  n_breaks <- ifelse(is.null(breaks), 6, breaks)
-  breaks_r <- seq(limits_r[1], limits_r[2], length.out = n_breaks)
-  #round
-  if(round){
-  breaks_r <- round(breaks_r, 0)}
-
+gg_map <- function(r, title_legend = "Richness"){
   ggplot() +
     geom_sf(data = sa, fill = "white", size = 0.1, colour = "grey40") +
     geom_sf(data = br, fill = "white", size = 0.1, colour = "grey40") +
     geom_sf(data = sc, fill = "snow1", colour = "black") +
     geom_spatraster(data = r, na.rm = TRUE) +
     geom_sf(data = sc, fill = NA, colour = "black") +
-    scale_fill_whitebox_b(palette = "muted", name = title_legend,
-                          limits = limits_r, breaks = breaks_r) +
+    scale_fill_whitebox_b(palette = "muted", name = title_legend) +
     coord_sf(xlim = c(bb_sc[1], xmax=bb_sc[2]),
              ylim = c(bb_sc[3], ymax=bb_sc[4]),
              expand = T) +
-    #ylab(type) +
     # metR::scale_x_longitude(ticks = 2) +
     # metR::scale_y_latitude(ticks = 2) +
     ggpubr::theme_pubclean() +
@@ -79,14 +62,10 @@ gg_map <- function(r, title_legend = "Richness", type = NULL, l = NULL,
     theme(panel.background = element_rect(fill = 'aliceblue'),
           panel.grid.major = element_blank(),
           panel.border = element_rect(colour = "black", fill=NA, size=1),
-          legend.position = c(0.34, 0.15), legend.direction = "horizontal",
-          legend.key.height =unit(0.2, "cm"),
-          legend.key.width = unit(0.9, "cm"),
-          legend.background = element_rect(fill = "transparent", size = 0.5,
-                                           colour = "transparent"),
-          # legend.background = element_rect(fill = "white", size = 0.5, alpha = 0,
-          #                                  colour = "black"),
-          legend.title.position = "top",
+          legend.position = c(0.1, 0.3),
+          legend.key.height =unit(0.9, "cm"),
+          legend.background = element_rect(fill = "white", size = 0.5,
+                                           colour = "black"),
           #legend.margin = margin(0, 0, 0, -0.32, "cm"),
           plot.title = element_text(hjust = 0.5, face = "bold"),
           plot.subtitle = element_text(hjust = 0.5, face = "bold"),
@@ -94,46 +73,42 @@ gg_map <- function(r, title_legend = "Richness", type = NULL, l = NULL,
                                r = 0,  # Right margin
                                b = 0,  # Bottom margin
                                l = -0.5),
-          #axis.title = element_blank(),
+          axis.title = element_blank(),
           axis.text = element_blank(),
           axis.ticks = element_blank())
 }
 
-gg_cor <- function(data, type = NULL){
+gg_cor <- function(data){
   ggplot(data, aes(x = Rich_obs, y = Rich_pred)) +
     geom_point(alpha = 0.25) +
     geom_smooth(method = "lm", col = "black") +
     geom_abline(intercept = 0, slope = 1, colour = "red",
                 linetype = "dashed", size = 1.2) +
-    xlab("Observed richness") +
-    ylab(paste0("Predicted richness\n", type)) +
-    expand_limits(x = 0, y=0) +
+    xlab("Observed richness") + ylab("Predicted richness") +
     ggpubr::theme_pubclean() +
     theme(axis.text=element_text(size=14), #Change size of numbers in axis
           axis.title=element_text(size=20,face="bold")) #Change size of text in axis
 }
 
 ####Arrange plots####
-arrange_obs <- function(d, type = NULL){
-    d[[1]] + ylab(type) + facet_grid("S Observed" ~ paste(names(d[1])), switch = "y") +
+arrange_obs <- function(d){
+  d[[1]] + facet_grid("S Observed" ~ paste(names(d[1])), switch = "y") +
     d[[2]] + facet_grid(.~ paste(names(d[2]))) +
     d[[3]] + facet_grid(.~ paste(names(d[3]))) +
     d[[4]] + facet_grid(.~ paste(names(d[4]))) +
     d[[5]] + facet_grid(.~ paste(names(d[5]))) +
     plot_layout(nrow = 1) &
-    theme(strip.text = element_text(size = 18, face = "bold"),
-          axis.title=element_text(size=20,face="bold"))
+    theme(strip.text = element_text(size = 18, face = "bold"))
 }
 
-arrange_pred_over <- function(d, facet, type = NULL){
-    d[[1]] + ylab(type) + facet_grid(paste0(facet) ~., switch = "y") +
+arrange_pred_over <- function(d, facet){
+  d[[1]] + facet_grid(paste0(facet) ~., switch = "y") +
     d[[2]] +
     d[[3]] +
     d[[4]] +
     d[[5]] +
     plot_layout(nrow = 1) &
-    theme(strip.text = element_text(size = 18, face = "bold"),
-          axis.title=element_text(size=20,face="bold"))
+    theme(strip.text = element_text(size = 18, face = "bold"))
 }
 
 arrange_cor <- function(d, facet){
