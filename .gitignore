@@ -1,14 +1,20 @@
-# 1. Ignorar todos os ficheiros e pastas na raiz
+# 1. Ignorar tudo na raiz do projeto
 /*
-/Results/*
-/Results_old/*
 
-# 2. Abrir uma exceção para a pasta 'Dryad'
-# O '/' no final indica que é uma pasta
+# 2. Permitir a existência da pasta Dryad (sem o conteúdo ainda)
+!Dryad/
+
+# 3. Ignorar tudo o que estiver DENTRO da pasta Dryad
+Dryad/*
+
+# 4. Abrir a exceção específica para subpastas
 !Dryad/data/
+!Dryad/Rasters/
+!Dryad/scripts/
+!Dryad/Vectors/
 
-# 3. Garantir que o próprio .gitignore e o projeto RStudio não desapareçam
+# 5. Manter ficheiros essenciais do projeto visíveis
 !.gitignore
-!*.Rproj
-
-.Rproj.user
+!paper_stacked_sdm.Rproj
+!README.md
+!LICENSE
